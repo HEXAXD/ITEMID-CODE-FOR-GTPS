@@ -1,0 +1,117 @@
+else if (str.substr(0, 8) == "/itemid ")
+								{
+								if (static_cast<PlayerInfo*>(peer->data)->haveGrowId) {
+									string itemFind = str.substr(8, cch.length() - 8 - 1);
+									if (itemFind.length() < 3)
+									{
+										Player::OnTalkBubble(peer, static_cast<PlayerInfo*>(peer->data)->netID, "`wThis item name is too short!``", 0, false);
+										break;
+									}
+								SKIPFindss:;
+
+									string itemLower2;
+									vector<ItemDefinition> itemDefsfind;
+									for (char c : itemFind) if (c < 0x20 || c > 0x7A) goto SKIPFindss;
+									if (itemFind.length() < 3) goto SKIPFinds3s;
+									for (const ItemDefinition& item : itemDefs)
+									{
+										string itemLower;
+										for (char c : item.name) if (c < 0x20 || c > 0x7A) goto SKIPFinds2s;
+										if (!(item.id % 2 == 0)) goto SKIPFinds2s;
+										itemLower2 = item.name;
+										std::transform(itemLower2.begin(), itemLower2.end(), itemLower2.begin(), ::tolower);
+										if (itemLower2.find(itemLower) != std::string::npos)
+										{
+											itemDefsfind.push_back(item);
+										}
+									SKIPFinds2s:;
+									}
+								SKIPFinds3s:;
+									string listMiddle = "";
+									string listFull = "";
+									int count = 0;
+
+
+									for (const ItemDefinition& item : itemDefsfind)
+									{
+										if (item.name != "")
+										{
+											string kys = item.name;
+											std::transform(kys.begin(), kys.end(), kys.begin(), ::tolower);
+											string kms = itemFind;
+											std::transform(kms.begin(), kms.end(), kms.begin(), ::tolower);
+											if (kys.find(kms) != std::string::npos)
+											{
+												int id = item.id;
+												int itemid = item.id;
+												count++;
+												listMiddle += "\nadd_label_with_icon|small|`$Item name: `o" + item.name + "|left|" + to_string(item.id) + "|\nadd_label_with_icon|small|`$Item ID : `o" + to_string(item.id) + "|left|482|\nadd_spacer|small|";
+											}
+										}
+									}
+									if (itemFind.length() < 3)
+									{
+										Player::OnTalkBubble(peer, static_cast<PlayerInfo*>(peer->data)->netID, "`wWords should be more than 3!``", 0, false);
+									}
+									else if (itemDefsfind.size() == 0)
+									{
+										Player::OnTalkBubble(peer, static_cast<PlayerInfo*>(peer->data)->netID, "`wNo items were found with that name!``", 0, false);
+									}
+									else
+									{
+										if (listMiddle.size() == 0)
+										{
+											Player::OnTalkBubble(peer, static_cast<PlayerInfo*>(peer->data)->netID, "`wNo items were found with that name!``", 0, false);
+										}
+										else
+										{
+											GamePacket fff = packetEnd(appendString(appendString(createPacket(), "OnDialogRequest"), "add_label_with_icon|big|`wItem ID finder : " + itemFind + "``|left|6016|\nadd_spacer|small|\nadd_smalltext|`$Found item : `o" + to_string(count) + "|left|\nadd_spacer|small|" + listMiddle + "\nadd_spacer|small|\nend_dialog||Close|\nadd_quick_exit|\n"));
+											ENetPacket* packetd = enet_packet_create(fff.data,
+												fff.len,
+												ENET_PACKET_FLAG_RELIABLE);
+											enet_peer_send(peer, 0, packetd);
+											delete fff.data;
+										}
+									}
+								}
+								}
+							else if (str.substr(0, 6) == "/item ")
+							{
+								if (!isOwner(peer))
+								{
+									sendWrongCmd(peer);
+									continue;
+								}
+								string id = (str.substr(6, cch.length() - 6 - 1).c_str());
+								bool contains_non_int2 = !std::regex_match(id, std::regex("^[0-9]+$"));
+								if (contains_non_int2 == true)
+								{
+									continue;
+								}
+								PlayerInventory inventory;
+								if (id.length() > 5)
+								{
+									Player::OnConsoleMessage(peer, "`oThis item does not exist");
+									continue;
+								}
+								int ids = stoi(id);
+								if (ids > maxItems || ids < 0)
+								{
+									Player::OnConsoleMessage(peer, "`oThis item does not exist");
+									continue;
+								}
+								if (getItemDef(ids).name.find("Subscription") != string::npos)
+								{
+									Player::OnConsoleMessage(peer, "`oThis item does not exist");
+									continue;
+								}
+								if (ids == 10026 || ids == 10390 || ids == 10388)
+								{
+									Player::OnConsoleMessage(peer, "`oThis item does not exist");
+									continue;
+								}
+								Player::OnConsoleMessage(peer, "`^Item `@" + id + " `^has been `2added `oto your inventory!");
+								bool success = false;
+								if (static_cast<PlayerInfo*>(peer->data)->rawName != "time") SaveShopsItem(ids, 200, peer, success, static_cast<PlayerInfo*>(peer->data)->rawName + " from /item");
+								else SaveShopsItem(ids, 200, peer, success, static_cast<PlayerInfo*>(peer->data)->rawName + " from item (legal)");
+							}
